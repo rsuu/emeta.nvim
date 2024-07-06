@@ -1,14 +1,34 @@
+-- TODO: open url
+
 local Config = require("emeta.config").Config
+local Sign = require("emeta.ui").Sign
+local Theme = require("emeta.ui").Theme
 local IBuffer = require("emeta.ibuffer").IBuffer
 local Segment = require("emeta/text").Segment
 local utils = require("emeta.utils")
+local ev = utils.extend_vec
+local Pos = utils.Pos
 
+---@class Emeta
+---@field cursor_pos Pos
+---@field ibuffer IBuffer
+---@field header Segment[]
+---@field segments Segment[]
+---@field selected_tab string
+---@field flag_gen boolean
+---@field ns string
+---@field buf number
+---@field win number
+---@field tabs Tab[]
+---@field config Config
+---@field start_row number # 0-based
+---@field start_col number # 0-based
 local Emeta = {
     config = Config:new(),
     selected_tab = "Anime",
-    buf = nil,
+    buf = -1,
+    win = -1,
     tabs = {
-        -- TODO: { a, A }
         { name = "Anime", key = "a" },
         { name = "Manga", key = "m" },
         { name = "Novel", key = "n" },
@@ -16,39 +36,37 @@ local Emeta = {
     },
     segments = { Segment },
     ibuffer = IBuffer,
-    cursor_pos = { row = 1, col = 0 },
+    cursor_pos = Pos,
     flag_gen = true,
 
-    -- 0-based
     start_row = 0,
     start_col = 0,
 }
 
-Emeta.new = function(self)
-    if self.buf ~= nil then
-        return
-    end
+---@class Tab
+---@field name string
+---@field key string
+local Tab = {
+    name = "",
+    key = "",
+}
 
+Emeta.new = function(self)
     self.buf = vim.api.nvim_create_buf(false, true)
     vim.api.nvim_buf_set_name(self.buf, "emeta")
 
     self.win = vim.api.nvim_open_win(self.buf, true, self.config.win)
-    vim.api.nvim_win_set_option(self.win, "modifiable", false)
 
-    self.ns = self.ns or vim.api.nvim_create_namespace("EmetaNamespace")
+    self.ns = self.ns or vim.api.nvim_create_namespace("Emeta-Namespace")
 
-    self:gen()
     self:set_keymap()
+    self:gen()
     self:flush()
     self:reset_cursor()
 end
 
 Emeta.gen = function(self)
-    -- clear table
-    self.segments = {}
-    self.header = {}
-
-    local ev = utils.extend_vec
+    self:clear()
 
     ev(self.header, {
         Segment.new_linebreak(),
@@ -93,7 +111,10 @@ Emeta.gen = function(self)
             Segment.new_space(),
             Segment.new_space(),
             Segment.new_space(),
-            Segment.new("#text", "2020/07 (July)", nil, nil),
+            Segment.new_space(),
+            Segment.new_space(),
+            Segment.new_space(),
+            Segment.new("#text", "July 2024", nil, nil),
             Segment.new_linebreak(),
 
             -- row 4
@@ -191,58 +212,92 @@ Emeta.gen = function(self)
             Segment.new_linebreak(),
 
             Segment.new_space(),
-            Segment.new("#text", "Total: 38 plugins", nil, nil),
+            Segment.new("#text", "Total items: 2", nil, nil),
             Segment.new_linebreak(),
             Segment.new_linebreak(),
 
             Segment.new_space(),
-            Segment.new("#text", "Loaded (36)", nil, nil),
+            Segment.new("!button", Sign.current, function()
+                return Theme.green
+            end, nil),
+            Segment.new_space(),
+            Segment.new("#text", "K-ON", nil, {
+                onclick = function()
+                    return {
+                        Segment.new_space(),
+                        Segment.new("#text", "├ GENRE", function()
+                            return "CursorLineFold"
+                        end, nil),
+                        Segment.new_space(),
+                        Segment.new("#sign", "", nil, nil),
+                        Segment.new_space(),
+                        Segment.new("#text", "K-ON, Music, Yuri", nil, nil),
+                        Segment.new_linebreak(),
+
+                        Segment.new_space(),
+                        Segment.new("#text", "├ TRACK", function()
+                            return "CursorLineFold"
+                        end, nil),
+                        Segment.new_space(),
+                        Segment.new("#sign", "", nil, nil),
+                        Segment.new_space(),
+                        Segment.new("#text", "2024-07-01 ~ 2024-07-04", nil, nil),
+                        Segment.new_linebreak(),
+
+                        Segment.new_space(),
+                        Segment.new("#text", "├ LINKS", function()
+                            return "CursorLineFold"
+                        end, nil),
+                        Segment.new_space(),
+                        Segment.new("#sign", "", nil, nil),
+                        Segment.new_space(),
+                        Segment.new("#link", "https://anilist.co", nil, nil),
+                        Segment.new_linebreak(),
+                    }
+                end,
+            }),
             Segment.new_linebreak(),
 
             Segment.new_space(),
-            Segment.new_space(),
-            Segment.new_space(),
-            Segment.new("#text", "●", function()
-                return "GruvboxOrange"
+            Segment.new("!button", Sign.current, function()
+                return Theme.green
             end, nil),
             Segment.new_space(),
-            Segment.new("#text", "cmp-buffer", nil, nil),
-            Segment.new_space(),
-            Segment.new("#text", "12.18ms", nil, nil),
-            Segment.new_space(),
-            Segment.new("#text", "", function()
-                return "GruvboxOrange"
-            end, nil),
-            Segment.new_space(),
-            Segment.new("#text", "Anime", function()
-                return "GruvboxGreen"
-            end, nil),
-            Segment.new_linebreak(),
-            Segment.new_linebreak(),
+            Segment.new("#text", "Girls Band Cry", nil, {
+                onclick = function()
+                    return {
+                        Segment.new_space(),
+                        Segment.new("#text", "├ GENRE", function()
+                            return "CursorLineFold"
+                        end, nil),
+                        Segment.new_space(),
+                        Segment.new("#sign", "", nil, nil),
+                        Segment.new_space(),
+                        Segment.new("#text", "K-ON, Music, Yuri", nil, nil),
+                        Segment.new_linebreak(),
 
-            Segment.new_space(),
-            Segment.new("#text", "Not Loaded (36)", nil, nil),
-            Segment.new_linebreak(),
+                        Segment.new_space(),
+                        Segment.new("#text", "├ TRACK", function()
+                            return "CursorLineFold"
+                        end, nil),
+                        Segment.new_space(),
+                        Segment.new("#sign", "", nil, nil),
+                        Segment.new_space(),
+                        Segment.new("#text", "2024-07-01 ~ 2024-07-04", nil, nil),
+                        Segment.new_linebreak(),
 
-            Segment.new_space(),
-            Segment.new_space(),
-            Segment.new_space(),
-            Segment.new("#text", "○", function()
-                return "GruvboxOrange"
-            end, nil),
-            Segment.new_space(),
-            Segment.new("#text", "cmp-buffer", nil, nil),
-            Segment.new_space(),
-            Segment.new("#text", "12.18ms", nil, nil),
-            Segment.new_space(),
-            Segment.new("#text", "", function()
-                return "GruvboxOrange"
-            end, nil),
-            Segment.new_space(),
-            Segment.new("#text", "Anime", function()
-                return "GruvboxGreen"
-            end, nil),
-            Segment.new_linebreak(),
+                        Segment.new_space(),
+                        Segment.new("#text", "├ LINKS", function()
+                            return "CursorLineFold"
+                        end, nil),
+                        Segment.new_space(),
+                        Segment.new("#sign", "", nil, nil),
+                        Segment.new_space(),
+                        Segment.new("#link", "https://anilist.co", nil, nil),
+                        Segment.new_linebreak(),
+                    }
+                end,
+            }),
             Segment.new_linebreak(),
         })
     else
@@ -251,6 +306,7 @@ Emeta.gen = function(self)
     self.flag_gen = true
 end
 
+---@param type "header"|"segments"
 Emeta.render = function(self, type)
     for index, segment in ipairs(self[type]) do
         local name = segment.name
@@ -289,6 +345,7 @@ Emeta.render = function(self, type)
         -- row: 1-based
         -- col: 0-based
         if self.flag_gen == true then
+            self.ibuffer = IBuffer
             local row = self.start_row + 1
 
             for i = 0, len, 1 do
@@ -304,9 +361,8 @@ Emeta.render = function(self, type)
 end
 
 Emeta.flush = function(self)
-    vim.bo[self.buf].modifiable = true
+    vim.api.nvim_set_option_value("modifiable", true, { buf = self.buf })
 
-    -- reset
     self.start_row = 0
     self.start_col = 0
 
@@ -315,15 +371,7 @@ Emeta.flush = function(self)
 
     self.flag_gen = false
 
-    -- vim.api.nvim_set_hl(0, "IAmTest", { fg = "#ffffff" })
-
-    vim.bo[self.buf].modifiable = false
-end
-
-Emeta.get_cursor = function(self)
-    local row, col = unpack(vim.api.nvim_win_get_cursor(0))
-
-    self.cursor_pos = { row, col }
+    vim.api.nvim_set_option_value("modifiable", false, { buf = self.buf })
 end
 
 Emeta.set_keymap = function(self)
@@ -331,11 +379,11 @@ Emeta.set_keymap = function(self)
         desc = "Toggle info",
         nowait = true,
         callback = function()
-            self:get_cursor()
+            self:sync_cursor()
 
-            local row, col = unpack(self.cursor_pos)
-            local id_header = self.ibuffer:get_header(row, col)
-            local id_segment = self.ibuffer:get_segment(row, col)
+            local pos = self.cursor_pos
+            local id_header = self.ibuffer:get_header(pos)
+            local id_segment = self.ibuffer:get_segment(pos)
 
             if id_header ~= nil then
                 local id = id_header
@@ -346,21 +394,8 @@ Emeta.set_keymap = function(self)
                 end
             elseif id_segment ~= nil then
                 local id = id_segment
-                local segment = self.segments[id]
-                self:toggle_info(segment)
 
-                print(
-                    self.selected_tab
-                        .. row
-                        .. "x"
-                        .. col
-                        .. " "
-                        .. id
-                        .. " = "
-                        .. segment.name
-                        .. "   "
-                        .. segment.text()
-                )
+                self:onclick(id)
             end
         end,
     })
@@ -373,13 +408,13 @@ Emeta.set_keymap = function(self)
                 return
             end
 
-            vim.bo[self.buf].modifiable = true
+            vim.api.nvim_set_option_value("modifiable", true, { buf = self.buf })
 
             vim.api.nvim_buf_clear_namespace(self.buf, self.ns, 0, -1)
-            vim.bo[self.buf].modifiable = false
 
             vim.api.nvim_buf_delete(0, {})
-            self.buf = nil
+            self.buf = -1
+            self.win = -1
         end,
     })
 
@@ -394,25 +429,101 @@ Emeta.set_keymap = function(self)
     end
 end
 
-Emeta.reset_cursor = function(self)
-    vim.api.nvim_win_set_cursor(0, { 1, 0 })
-end
-
 Emeta.switch_tab = function(self, tab)
-    vim.bo[self.buf].modifiable = true
+    vim.api.nvim_set_option_value("modifiable", true, { buf = self.buf })
 
     self.selected_tab = tab.name
     vim.api.nvim_buf_set_lines(0, 0, -1, 0, { "" })
 
-    self:reset_cursor()
     self:gen()
     self:flush()
-
-    vim.bo[self.buf].modifiable = false
+    self:reset_cursor()
 end
 
-Emeta.toggle_info = function(self, segment)
-    -- TODO: gen
+Emeta.onclick = function(self, id)
+    -- debug
+    local segment = self.segments[id]
+    local name = segment.name
+
+    if name == "#link" then
+        local cmd, err = vim.ui.open(segment.text())
+
+        if cmd then
+            cmd:wait()
+        else
+            vim.print(err)
+        end
+    elseif name == "!button" then
+        self:toggle_info(id)
+    else
+        vim.print(self.selected_tab .. " = " .. name .. "   " .. segment.text())
+    end
 end
+
+Emeta.toggle_info = function(self, idx)
+    local name = self.segments[idx].name
+
+    self:sync_cursor()
+    local last_pos = self.cursor_pos
+
+    idx = self:skip_segment(idx, 2)
+
+    vim.api.nvim_set_option_value("modifiable", true, { buf = self.buf })
+    vim.api.nvim_buf_set_lines(0, 0, -1, 0, { "" })
+
+    -- important
+    self.flag_gen = true
+
+    -- reset
+    self.start_row = 0
+    self.start_col = 0
+
+    local opts = self.segments[idx].opts
+    local meta = opts.onclick()
+
+    if meta ~= nil then
+        if opts.clicked == false then
+            for index, value in ipairs(meta) do
+                table.insert(self.segments, idx + 1 + index, value)
+            end
+
+            opts.clicked = true
+        else
+            local len = #meta
+
+            for _ = 1, len, 1 do
+                table.remove(self.segments, idx + 1)
+            end
+
+            opts.clicked = false
+        end
+    end
+
+    self:flush()
+
+    vim.api.nvim_win_set_cursor(self.win, last_pos)
+end
+
+---@return number
+Emeta.skip_segment = function(self, idx, skip)
+    return idx + skip
+end
+
+Emeta.reset_cursor = function(self)
+    vim.api.nvim_win_set_cursor(0, { 1, 0 })
+    self:sync_cursor()
+end
+
+Emeta.sync_cursor = function(self)
+    -- cast tuple to Pos
+    self.cursor_pos = vim.api.nvim_win_get_cursor(self.win)
+end
+
+Emeta.clear = function(self)
+    self.segments = {}
+    self.header = {}
+end
+
+-- vim.api.nvim_set_hl(0, "IAmTest", { fg = "#ffffff" })
 
 return { Emeta = Emeta, Config = Config, IBuffer = IBuffer, Segment = Segment }

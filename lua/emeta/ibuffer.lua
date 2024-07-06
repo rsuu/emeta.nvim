@@ -1,10 +1,11 @@
+local Pos = require("emeta/utils").Pos
+
+---@class IBuffer
+---@field header number[][]
+---@field segments number[][]
 local IBuffer = {
     header = {},
     segments = {},
-
-    ---@class IBuffer
-    ---@field header table
-    ---@field segments table
 }
 
 IBuffer.new = function(self)
@@ -16,11 +17,11 @@ IBuffer.new = function(self)
     }, self)
 end
 
----@param self IBuffer
----@param row integer
----@param col integer
----@return integer?
-IBuffer.get_header = function(self, row, col)
+---@param pos Pos
+---@return number?
+IBuffer.get_header = function(self, pos)
+    local row, col = unpack(pos)
+
     if self.header[row] == nil then
         return nil
     else
@@ -28,11 +29,11 @@ IBuffer.get_header = function(self, row, col)
     end
 end
 
----@param self IBuffer
----@param row integer
----@param col integer
----@return integer?
-IBuffer.get_segment = function(self, row, col)
+---@param pos Pos
+---@return number?
+IBuffer.get_segment = function(self, pos)
+    local row, col = unpack(pos)
+
     if self.segments[row] == nil then
         return nil
     else

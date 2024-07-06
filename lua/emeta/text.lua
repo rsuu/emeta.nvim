@@ -4,6 +4,12 @@ local Chunk = {
     opts = {},
 }
 
+---@class Segment
+---@field name string
+---@field text function
+---@field hl function
+---@field info {}
+---@field opts {}
 local Segment = {
     name = "",
     text = function()
@@ -12,17 +18,31 @@ local Segment = {
     hl = function()
         return ""
     end,
+    info = {
+        is_clicked = false,
+    },
     opts = {},
-    -- on_click = function () end,
-
-    ---@class Segment
-    ---@field name string
-    ---@field text function
-    ---@field hl function
-    ---@field opts {}
 }
 
+---@return self
 Segment.new = function(name, text, hl, opts)
+    local _opts = function()
+        if opts == nil then
+            opts = {
+                onclick = function()
+                    return nil
+                end,
+            }
+        end
+
+        opts.onclick = opts.onclick or function()
+            return nil
+        end
+        opts.clicked = false
+
+        return opts
+    end
+
     return {
         name = name,
         text = function()
@@ -35,12 +55,14 @@ Segment.new = function(name, text, hl, opts)
                 return ""
             end
         end,
-        opts = function()
-            return opts or {}
-        end,
+        info = {
+            is_clicked = false,
+        },
+        opts = _opts(),
     }
 end
 
+---@return self
 Segment.new_space = function()
     return {
         name = "#space",
@@ -50,10 +72,15 @@ Segment.new_space = function()
         hl = function()
             return ""
         end,
-        opts = {},
+        opts = function()
+            return {
+                onclick = function() end,
+            }
+        end,
     }
 end
 
+---@return self
 Segment.new_linebreak = function()
     return {
         name = "#linebreak",
@@ -63,10 +90,15 @@ Segment.new_linebreak = function()
         hl = function()
             return ""
         end,
-        opts = {},
+        opts = function()
+            return {
+                onclick = function() end,
+            }
+        end,
     }
 end
 
+---@return self
 Segment.new_tab = function()
     return {
         name = "#tab",
@@ -76,7 +108,11 @@ Segment.new_tab = function()
         hl = function()
             return ""
         end,
-        opts = {},
+        opts = function()
+            return {
+                onclick = function() end,
+            }
+        end,
     }
 end
 

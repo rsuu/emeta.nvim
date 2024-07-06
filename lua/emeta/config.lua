@@ -7,6 +7,7 @@ local new_h = math.floor(h * 0.9)
 local row = (h - new_h) / 2
 local col = (w - new_w) / 2
 
+---@class Config
 local Config = {
     username = "test",
     win = {
@@ -21,6 +22,7 @@ local Config = {
     w_limit = new_w * 0.6,
 }
 
+---@return self
 Config.new = function(self)
     return self
 end
